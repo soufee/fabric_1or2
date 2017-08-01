@@ -1,3 +1,4 @@
+package example;
 
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
@@ -11,7 +12,7 @@ import java.util.List;
 
 import static java.lang.String.format;
 
-public class TestChaincode extends ChaincodeBase {
+public class TestChaincode  extends ChaincodeBase {
 
     @Override
     public Response init(ChaincodeStub chaincodeStub) {
@@ -53,7 +54,7 @@ public class TestChaincode extends ChaincodeBase {
                 return newErrorResponse(newErrorJson("Unknown function: %s", function));
         }
     }
-    
+
     private Response init(ChaincodeStub stub, String[] args) {
         if (args.length != 4) throw new IllegalArgumentException("Incorrect number of arguments. Expecting: init(account1, amount1, account2, amount2 )");
 
