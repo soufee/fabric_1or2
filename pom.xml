@@ -20,9 +20,6 @@
             </plugin>
         </plugins>
     </build>
-    <modules>
-        <module>chaincode</module>
-    </modules>
 
     <dependencies>
 
@@ -45,11 +42,11 @@
         </dependency>
 
 
-        <dependency>
-            <groupId>org.hyperledger</groupId>
-            <artifactId>shim-client</artifactId>
-            <version>1.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.hyperledger</groupId>-->
+            <!--<artifactId>shim-client</artifactId>-->
+            <!--<version>1.0</version>-->
+        <!--</dependency>-->
 
     </dependencies>
 

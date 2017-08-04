@@ -122,27 +122,27 @@ public class Main {
             channel.initialize();
 
             // Install Chaincode
-            ChaincodeID chaincodeID = ChaincodeID.newBuilder()
-                    .setName("example_cc_java")
-                    .setVersion("1")
-                    .build();
-
-            InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
-            installProposalRequest.setChaincodeID(chaincodeID);
-            installProposalRequest.setChaincodeLanguage(TransactionRequest.Type.JAVA);
-            installProposalRequest.setChaincodePath(null); // Must be null for Java!
-
-
-            cf = new File("chaincode/build");
-            installProposalRequest.setChaincodeInputStream(Util.generateTarGzInputStream(
-                    cf, null));
-
-            installProposalRequest.setChaincodeVersion("1");
-
-            Collection<ProposalResponse> responses = client.sendInstallProposal(installProposalRequest, new HashSet<Peer>(Arrays.asList(peer)));
-
-
-            SDKUtils.getProposalConsistencySets(responses);
+//            ChaincodeID chaincodeID = ChaincodeID.newBuilder()
+//                    .setName("example_cc_java")
+//                    .setVersion("1")
+//                    .build();
+//
+//            InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
+//            installProposalRequest.setChaincodeID(chaincodeID);
+//            installProposalRequest.setChaincodeLanguage(TransactionRequest.Type.JAVA);
+//            installProposalRequest.setChaincodePath(null); // Must be null for Java!
+//
+//
+//            cf = new File("chaincode/build");
+//            installProposalRequest.setChaincodeInputStream(Util.generateTarGzInputStream(
+//                    cf, null));
+//
+//            installProposalRequest.setChaincodeVersion("1");
+//
+//            Collection<ProposalResponse> responses = client.sendInstallProposal(installProposalRequest, new HashSet<Peer>(Arrays.asList(peer)));
+//
+//
+//            SDKUtils.getProposalConsistencySets(responses);
 
 
 
