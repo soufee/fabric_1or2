@@ -16,6 +16,7 @@ import org.hyperledger.fabric.sdk.transaction.TransactionBuilder;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
+import org.hyperledger.fabric_ca.sdk.exception.RegistrationException;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -32,18 +33,18 @@ import java.util.concurrent.TimeUnit;
  * Created by user on 21.07.2017.
  */
 public class Main {
-    public static final String IP                   = "192.168.99.100";
-    public static final String CFPATH               = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem";
-    public static final String SERTIFICATEPATH      = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem";
-    public static final String PRIVATKEY            = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/db92ba8af79da54b38bb06b114f1831cce020c15b4f630b30a4505f21ed8b344_sk";
-    public static final String SERVERCRT            = "src/main/env/channel/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt";
-    public static final String PEERSERVER           = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt";
-    public static final String CHANELTX             = "src/main/env/channel/channel.tx";
-    public static final String ADMINSECRET          = "adminpw";
-    public static final String MSPID                = "Org1MSP";
-    public static final String CHAIN_CODE_PATH      = "/main/java/";
-    public static final String CHAIN_CODE_VERSION   = "1";
-    public static final String CHAIN_CODE_NAME      = "doc.go";
+    public static final String IP = "192.168.99.100";
+    public static final String CFPATH = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem";
+    public static final String SERTIFICATEPATH = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem";
+    public static final String PRIVATKEY = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/db92ba8af79da54b38bb06b114f1831cce020c15b4f630b30a4505f21ed8b344_sk";
+    public static final String SERVERCRT = "src/main/env/channel/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt";
+    public static final String PEERSERVER = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt";
+    public static final String CHANELTX = "src/main/env/channel/channel.tx";
+    public static final String ADMINSECRET = "adminpw";
+    public static final String MSPID = "Org1MSP";
+    public static final String CHAIN_CODE_PATH = "/main/java";
+    public static final String CHAIN_CODE_VERSION = "1";
+    public static final String CHAIN_CODE_NAME = "doc";
 
     public static void main(String[] args) {
         try {
@@ -57,9 +58,16 @@ public class Main {
 
             FCUser org1_admin = new FCUser("admin");
             org1_admin.setEnrollment(org1_ca.enroll(org1_admin.getName(), ADMINSECRET));
+            FCUser org1_user;
+try {
+    org1_user = RegisterUser.registerUser("Ashamaz", org1_admin, org1_ca, MSPID);
+} catch (RegistrationException e){
+    System.out.println(e.getMessage());
+    System.out.println("Перезапусти докер");
+    return;
+}
 
-            FCUser org1_user =  RegisterUser.registerUser("Ashamaz", org1_admin, org1_ca, MSPID);
-        //    RegisterUser.registerUser("Ratmir", org1_admin, org1_ca, MSPID);
+            //    RegisterUser.registerUser("Ratmir", org1_admin, org1_ca, MSPID);
 
             FCUser org1_peer_admin = new FCUser("Org1Admin");
             org1_peer_admin.setMspId(MSPID);
@@ -84,7 +92,7 @@ public class Main {
             ordererProperties.setProperty("negotiationType", "TLS");
             ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
             ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
-                Orderer orderer = client.newOrderer("orderer.example.com", "grpc://" + IP + ":7050", ordererProperties);
+            Orderer orderer = client.newOrderer("orderer.example.com", "grpc://" + IP + ":7050", ordererProperties);
 
             Properties peerProperties = new Properties();
             cf = new File(PEERSERVER);
@@ -93,7 +101,7 @@ public class Main {
             peerProperties.setProperty("sslProvider", "openSSL");
             peerProperties.setProperty("negotiationType", "TLS");
             peerProperties.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
-                Peer peer = client.newPeer("peer0.org1.example.com", "grpc://" + IP + ":7051", peerProperties);
+            Peer peer = client.newPeer("peer0.org1.example.com", "grpc://" + IP + ":7051", peerProperties);
 
             Properties ehProperties = new Properties();
             cf = new File(PEERSERVER);
@@ -103,7 +111,7 @@ public class Main {
             ehProperties.setProperty("negotiationType", "TLS");
             ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
             ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
-                EventHub eventHub = client.newEventHub("peer0.org1.example.com", "grpc://" + IP + ":7053", ehProperties);
+            EventHub eventHub = client.newEventHub("peer0.org1.example.com", "grpc://" + IP + ":7053", ehProperties);
 
             ChannelConfiguration channelConfiguration = new ChannelConfiguration(new File(CHANELTX));
             Channel channel = client.newChannel("mychannel", orderer, channelConfiguration, client.getChannelConfigurationSignature(channelConfiguration, org1_peer_admin));
@@ -125,37 +133,33 @@ public class Main {
             peersFromOrg.add(peer);
             InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
             installProposalRequest.setChaincodeID(chaincodeID);
-try {
-    File initialFile = new File("C:\\Users\\Shomakhov\\go_cc\\src\\main\\java\\doc.go");
-    InputStream targetStream = FileUtils.openInputStream(initialFile);
-    installProposalRequest.setChaincodeInputStream(targetStream);
-} catch (Exception e){
-    System.out.println(e.getMessage());
-    e.printStackTrace();
-}
-            Collection<ProposalResponse> responses=client.sendInstallProposal(installProposalRequest, peersFromOrg);
 
-//            for (ProposalResponse sdkProposalResponse : responses) {
-//                sdkProposalResponse.setProposal();
-//                sdkProposalResponse.setProposalResponse();
-//            }
+            File initialFile = new File("C:\\Users\\Shomakhov\\go_cc");
+          //  InputStream targetStream = FileUtils.openInputStream(initialFile);
+         //   installProposalRequest.setChaincodeInputStream(targetStream);
+            installProposalRequest.setChaincodeSourceLocation(initialFile);
+           // client.sendInstallProposal(installProposalRequest, peersFromOrg);
 
+
+            Collection<ProposalResponse> responses = client.sendInstallProposal(installProposalRequest, peersFromOrg);
+            ProposalResponse response = responses.iterator().next();
+
+            System.out.println("response, который мы получили = " + response.toString());
 
             List<FabricProposalResponse.Endorsement> ed = new LinkedList<>();
             FabricProposal.Proposal proposal = null;
 
             ByteString proposalResponsePayload = ByteString.copyFromUtf8("1234");
-            String proposalTransactionID = null;
-
+            String proposalTransactionID = "proposalTransactionID";
 
 
             for (ProposalResponse sdkProposalResponse : responses) {
                 try {
-
+                    System.out.println(sdkProposalResponse.getStatus());
+                    System.out.println(sdkProposalResponse.getMessage());
                     FabricProposalResponse.Endorsement element = sdkProposalResponse.getProposalResponse().getEndorsement();
                     ed.add(element);
-                }
-                catch (NullPointerException e){
+                } catch (NullPointerException e) {
                     e.printStackTrace();
                 }
                 if (proposal == null) {
@@ -182,24 +186,16 @@ try {
                     .build();
 
 
-
-           //       CompletableFuture<BlockEvent.TransactionEvent> sret = registerTxListener(proposalTransactionID);
+            //       CompletableFuture<BlockEvent.TransactionEvent> sret = registerTxListener(proposalTransactionID);
 
             //channel.sendTransaction();
             Collection<Orderer> orderers = new ArrayList<>();
             orderers.add(orderer);
-            channel.sendTransaction(responses,orderers);
+            channel.sendTransaction(responses, orderers);
 
             // Close channel
             channel.shutdown(true);
 // end here
-
-
-
-
-
-
-            channel.shutdown(true);
 
 
 
