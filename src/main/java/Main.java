@@ -1,12 +1,18 @@
+import com.google.protobuf.ByteString;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.hyperledger.fabric.protos.common.Common;
+import org.hyperledger.fabric.protos.peer.FabricProposal;
+import org.hyperledger.fabric.protos.peer.FabricProposalResponse;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
+import org.hyperledger.fabric.sdk.transaction.TransactionBuilder;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
@@ -19,21 +25,25 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by user on 21.07.2017.
  */
 public class Main {
-    public static final String IP = "192.168.99.100";
-    public static final String CFPATH = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem";
-    public static final String SERTIFICATEPATH = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem";
-    public static final String PRIVATKEY = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/db92ba8af79da54b38bb06b114f1831cce020c15b4f630b30a4505f21ed8b344_sk";
-    public static final String SERVERCRT = "src/main/env/channel/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt";
-    public static final String PEERSERVER = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt";
-    public static final String CHANELTX = "src/main/env/channel/channel.tx";
-    public static final String ADMINSECRET = "adminpw";
-    public static final String MSPID = "Org1MSP";
+    public static final String IP                   = "192.168.99.100";
+    public static final String CFPATH               = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem";
+    public static final String SERTIFICATEPATH      = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem";
+    public static final String PRIVATKEY            = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/db92ba8af79da54b38bb06b114f1831cce020c15b4f630b30a4505f21ed8b344_sk";
+    public static final String SERVERCRT            = "src/main/env/channel/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt";
+    public static final String PEERSERVER           = "src/main/env/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt";
+    public static final String CHANELTX             = "src/main/env/channel/channel.tx";
+    public static final String ADMINSECRET          = "adminpw";
+    public static final String MSPID                = "Org1MSP";
+    public static final String CHAIN_CODE_PATH      = "/main/java/";
+    public static final String CHAIN_CODE_VERSION   = "1";
+    public static final String CHAIN_CODE_NAME      = "doc.go";
 
     public static void main(String[] args) {
         try {
@@ -48,7 +58,7 @@ public class Main {
             FCUser org1_admin = new FCUser("admin");
             org1_admin.setEnrollment(org1_ca.enroll(org1_admin.getName(), ADMINSECRET));
 
-            RegisterUser.registerUser("Ashamaz", org1_admin, org1_ca, MSPID);
+            FCUser org1_user =  RegisterUser.registerUser("Ashamaz", org1_admin, org1_ca, MSPID);
         //    RegisterUser.registerUser("Ratmir", org1_admin, org1_ca, MSPID);
 
             FCUser org1_peer_admin = new FCUser("Org1Admin");
@@ -105,11 +115,91 @@ public class Main {
             channel.initialize();
             System.out.println(channel.getName() + " created!");
 
+//start here
+
+            final ChaincodeID chaincodeID = ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
+                    .setVersion(CHAIN_CODE_VERSION)
+                    .setPath(CHAIN_CODE_PATH).build();
+
+            Set<Peer> peersFromOrg = new HashSet<>();
+            peersFromOrg.add(peer);
+            InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
+            installProposalRequest.setChaincodeID(chaincodeID);
+try {
+    File initialFile = new File("C:\\Users\\Shomakhov\\go_cc\\src\\main\\java\\doc.go");
+    InputStream targetStream = FileUtils.openInputStream(initialFile);
+    installProposalRequest.setChaincodeInputStream(targetStream);
+} catch (Exception e){
+    System.out.println(e.getMessage());
+    e.printStackTrace();
+}
+            Collection<ProposalResponse> responses=client.sendInstallProposal(installProposalRequest, peersFromOrg);
+
+//            for (ProposalResponse sdkProposalResponse : responses) {
+//                sdkProposalResponse.setProposal();
+//                sdkProposalResponse.setProposalResponse();
+//            }
+
+
+            List<FabricProposalResponse.Endorsement> ed = new LinkedList<>();
+            FabricProposal.Proposal proposal = null;
+
+            ByteString proposalResponsePayload = ByteString.copyFromUtf8("1234");
+            String proposalTransactionID = null;
+
+
+
+            for (ProposalResponse sdkProposalResponse : responses) {
+                try {
+
+                    FabricProposalResponse.Endorsement element = sdkProposalResponse.getProposalResponse().getEndorsement();
+                    ed.add(element);
+                }
+                catch (NullPointerException e){
+                    e.printStackTrace();
+                }
+                if (proposal == null) {
+                    proposal = sdkProposalResponse.getProposal();
+                    proposalTransactionID = sdkProposalResponse.getTransactionID();
+                    proposalResponsePayload = sdkProposalResponse.getProposalResponse().getPayload();
+
+                }
+
+
+            }
+
+
+            TransactionBuilder transactionBuilder = TransactionBuilder.newBuilder();
+
+            Common.Payload transactionPayload = transactionBuilder
+                    .chaincodeProposal(proposal)
+                    .endorsements(ed)
+                    .proposalResponsePayload(proposalResponsePayload).build();
+
+            Common.Envelope transactionEnvelope = Common.Envelope.newBuilder()
+                    .setPayload(transactionPayload.toByteString())
+                    .setSignature(ByteString.copyFrom(client.getCryptoSuite().sign(org1_user.getEnrollment().getKey(), transactionPayload.toByteArray())))
+                    .build();
+
+
+
+           //       CompletableFuture<BlockEvent.TransactionEvent> sret = registerTxListener(proposalTransactionID);
+
+            //channel.sendTransaction();
+            Collection<Orderer> orderers = new ArrayList<>();
+            orderers.add(orderer);
+            channel.sendTransaction(responses,orderers);
+
+            // Close channel
+            channel.shutdown(true);
+// end here
 
 
 
 
-  channel.shutdown(true);
+
+
+            channel.shutdown(true);
 
 
 
