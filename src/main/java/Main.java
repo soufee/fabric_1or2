@@ -49,7 +49,7 @@ public class Main {
             org1_admin.setEnrollment(org1_ca.enroll(org1_admin.getName(), ADMINSECRET));
 
             RegisterUser.registerUser("Ashamaz", org1_admin, org1_ca, MSPID);
-            RegisterUser.registerUser("Ratmir", org1_admin, org1_ca, MSPID);
+        //    RegisterUser.registerUser("Ratmir", org1_admin, org1_ca, MSPID);
 
             FCUser org1_peer_admin = new FCUser("Org1Admin");
             org1_peer_admin.setMspId(MSPID);
