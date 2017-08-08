@@ -138,12 +138,13 @@ try {
           //  InputStream targetStream = FileUtils.openInputStream(initialFile);
          //   installProposalRequest.setChaincodeInputStream(targetStream);
             installProposalRequest.setChaincodeSourceLocation(initialFile);
+
            // client.sendInstallProposal(installProposalRequest, peersFromOrg);
 
 
             Collection<ProposalResponse> responses = client.sendInstallProposal(installProposalRequest, peersFromOrg);
             ProposalResponse response = responses.iterator().next();
-
+            System.out.println(response.getMessage().toString());
             System.out.println("response, который мы получили = " + response.toString());
 
             List<FabricProposalResponse.Endorsement> ed = new LinkedList<>();
@@ -157,6 +158,7 @@ try {
                 try {
                     System.out.println(sdkProposalResponse.getStatus());
                     System.out.println(sdkProposalResponse.getMessage());
+
                     FabricProposalResponse.Endorsement element = sdkProposalResponse.getProposalResponse().getEndorsement();
                     ed.add(element);
                 } catch (NullPointerException e) {

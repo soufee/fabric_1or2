@@ -1,27 +1,71 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	//"strconv"
+	"strconv"
+	"time"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
-	"bytes"
-	//"time"
-	//"strconv"
-	"time"
-	"strconv"
 )
 
-// SimpleChaincode example simple Chaincode implementation
-type SimpleChaincode struct {
+// DocHash Chaincode implementation
+type DocChaincode struct {
 }
 
+var logger = shim.NewLogger("DocChaincode")
 
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	//fmt.Println("doc Init")
+func (t *DocChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	logger.Info("Init")
+	return shim.Success(nil)
+}
 
-	err := stub.PutState("test", []byte("val0"))
+func (t *DocChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+
+	logger.Info("Invoke")
+
+	function, args := stub.GetFunctionAndParameters()
+
+	logger.Info(function, args)
+
+	if function == "add" {
+		// Add document, parameters: name, current_hash
+		return t.add(stub, args)
+	} else if function == "update" {
+		// Update document, parameters: name, previous_hash, current_hash
+		return t.update(stub, args)
+	} else if function == "query" {
+		// Get history of document changes, parameters: name
+		return t.query(stub, args)
+	}
+
+	return shim.Error("Invalid invoke function name. Expecting \"add\" \"update\" \"query\".")
+}
+
+// add puts document into KVS, parameters: name, current_hash
+func (t *DocChaincode) add(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	if len(args) != 2 {
+		return shim.Error("Incorrect number of arguments. Expecting name of document and its hash.")
+	}
+
+	var Name, Hash string
+
+	Name = args[0]
+	Hash = args[1]
+
+	hash, err := stub.GetState(Name)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	if hash != nil {
+		return shim.Error("File \"" + Name + "\" already exists with hash=" + string(hash))
+	}
+
+	err = stub.PutState(Name, []byte(Hash))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -29,100 +73,58 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+// update puts new document hash into KVS, parameters: name, current_hash
+func (t *DocChaincode) update(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	//fmt.Println("doc Invoke")
-	function, args := stub.GetFunctionAndParameters()
-	//function, _ := stub.GetFunctionAndParameters()
-	if function == "invoke" {
-		// Make payment of X units from A to B
-		//return t.invoke(stub, args)
-		return shim.Success(nil)
-	} else if function == "state" {
-		// Deletes an entity from its state
-		return t.state(stub, args)
-		return shim.Success(nil)
-	} else if function == "query" {
-		// the old "Query" is now implemtned in invoke
-		return t.query(stub, args)
-		return shim.Success(nil)
-	} else if function == "set" {
-		// the old "Query" is now implemtned in invoke
-		return t.set(stub, args)
-		return shim.Success(nil)
+	if len(args) != 3 {
+		return shim.Error("Incorrect number of arguments. Expecting name of document and its previous hash and new hash.")
 	}
 
-	return shim.Error("Invalid invoke function name. Expecting \"invoke\" \"delete\" \"query\"")
-}
+	var Name, OldHash, NewHash string
 
-func (t *SimpleChaincode) set(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var A string // Entities
-	var B string // Entities
-	var err error
+	Name = args[0]
+	OldHash = args[1]
+	NewHash = args[2]
 
-	if len(args) != 2 {
-		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")
-	}
+	CurrentHash, err := stub.GetState(Name)
 
-	A = args[0]
-	B = args[1]
-
-	err = stub.PutState(A, []byte(B))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	return shim.Success([]byte(B))
+	if CurrentHash == nil {
+		return shim.Error("File \"" + Name + "\" doesnt exist in storage.")
+	}
+
+	if string(CurrentHash) != OldHash {
+		return shim.Error("File \"" + Name + "\" has another hash=" + string(CurrentHash))
+	}
+
+	err = stub.PutState(Name, []byte(NewHash))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) state(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var A string // Entities
-	var err error
+// query gets history of document changes from KVS, parameters: name
+func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	if len(args) != 1 {
-		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")
+		return shim.Error("Incorrect number of arguments. Expecting name of document.")
 	}
 
-	A = args[0]
-
-	// Get the state from the ledger
-	Avalbytes, err := stub.GetState(A)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + A + "\"}"
-		return shim.Error(jsonResp)
-	}
-
-	if Avalbytes == nil {
-		jsonResp := "{\"Error\":\"Nil amount for " + A + "\"}"
-		return shim.Error(jsonResp)
-	}
-
-	jsonResp := "{\"Name\":\"" + A + "\",\"Amount\":\"" + string(Avalbytes) + "\"}"
-	fmt.Printf("State Response:%s\n", jsonResp)
-
-	return shim.Success(Avalbytes)
-}
-
-func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	fmt.Println("doc Query")
-	var A string // Entities
+	var Name string
 	var err error
 
-	if len(args) != 1 {
-		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")
-	}
+	Name = args[0]
 
-	A = args[0]
-
-	fmt.Println(A)
-
-	resultsIterator, err := stub.GetHistoryForKey(A)
+	resultsIterator, err := stub.GetHistoryForKey(Name)
 	if err != nil {
-		fmt.Println("failed GetHistoryForKey")
 		shim.Error(err.Error())
 	}
 	defer resultsIterator.Close()
-
 
 	// buffer is a JSON array containing historic values
 	var buffer bytes.Buffer
@@ -132,9 +134,9 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 	for resultsIterator.HasNext() {
 		response, err := resultsIterator.Next()
 		if err != nil {
-			fmt.Println("failed resultsIterator")
 			shim.Error(err.Error())
 		}
+
 		// Add a comma before array members, suppress it for the first array member
 		if bArrayMemberAlreadyWritten == true {
 			buffer.WriteString(",")
@@ -145,9 +147,9 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 		buffer.WriteString("\"")
 
 		buffer.WriteString(", \"Value\":")
-		// if it was a delete operation on given key, then we need to set the
-		//corresponding value null. Else, we will write the response.Value
-		//as-is (as the Value itself a JSON marble)
+
+		// If it was a delete operation on given key, then we need to set the corresponding value null.
+		// Else, we will write the response.Value as-is
 		if response.IsDelete {
 			buffer.WriteString("null")
 		} else {
@@ -167,16 +169,15 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 		buffer.WriteString("}")
 		bArrayMemberAlreadyWritten = true
 	}
+
 	buffer.WriteString("]")
-
-	fmt.Printf("- getHistoryForMarble returning:\n%s\n", buffer.String())
-
 
 	return shim.Success(buffer.Bytes())
 }
 
 func main() {
-	err := shim.Start(new(SimpleChaincode))
+	logger.Info("main")
+	err := shim.Start(new(DocChaincode))
 	if err != nil {
 		fmt.Printf("Error starting doc chaincode: %s", err)
 	}
