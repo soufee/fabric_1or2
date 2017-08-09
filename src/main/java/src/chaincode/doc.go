@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/core/src.chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
@@ -179,6 +179,6 @@ func main() {
 	logger.Info("main")
 	err := shim.Start(new(DocChaincode))
 	if err != nil {
-		fmt.Printf("Error starting doc chaincode: %s", err)
+		fmt.Printf("Error starting doc src.chaincode: %s", err)
 	}
 }
