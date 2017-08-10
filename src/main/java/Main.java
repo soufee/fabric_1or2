@@ -33,7 +33,7 @@ public class Main {
     public static Orderer orderer;
     public static FCUser org1_user;
 
-  //  public static InstallProposalRequest installProposalRequest;
+    //  public static InstallProposalRequest installProposalRequest;
     public static FCUser org1_peer_admin;
     public static HFCAClient org1_ca;
     public static FCUser org1_admin;
@@ -41,8 +41,8 @@ public class Main {
     public static File certificateFile;
     public static File privateKeyFile;
     public static PrivateKey privateKey;
-  public static  ChaincodeEndorsementPolicy chaincodeEndorsementPolicy;
-    public final static ChaincodeID chaincodeID =  ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
+    public static ChaincodeEndorsementPolicy chaincodeEndorsementPolicy;
+    public final static ChaincodeID chaincodeID = ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
             .setVersion(CHAIN_CODE_VERSION)
             .setPath(CHAIN_CODE_PATH).build();
 
@@ -59,17 +59,17 @@ public class Main {
 
             //------------------------------------------------------
 
-            System.out.println("ChaincodeID: "+chaincodeID.getPath()+" "+chaincodeID.getName());
+            System.out.println("ChaincodeID: " + chaincodeID.getPath() + " " + chaincodeID.getName());
             Set<Peer> peersFromOrg = new HashSet<>();
             peersFromOrg.add(peer);
 
-             chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
+            chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
             chaincodeEndorsementPolicy.fromYamlFile(new File("src/main/env/chaincodeendorsementpolicy.yaml"));
 
-            InstallProposalRequest   installProposalRequest = client.newInstallProposalRequest();
+            InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
             installProposalRequest.setChaincodeID(chaincodeID);
 
-        //    installProposalRequest.setChaincodeSourceLocation(new File("src/main/java"));
+            //    installProposalRequest.setChaincodeSourceLocation(new File("src/main/java"));
 
             File initialFile = new File("src/main/cc/src/doc_cc");
 
@@ -119,16 +119,14 @@ public class Main {
             Collection<Orderer> orderers = new ArrayList<>();
             orderers.add(orderer);
             channel.sendTransaction(responses, orderers);
-
+            Commands.sendTransInit();
             Scanner scanner = new Scanner(System.in);
             String line = "";
             System.out.println("Введите команду...");
             while (!(line.equals("exit"))) {
                 line = scanner.nextLine();
-                switch (line){
-                    case "init":
-                        Commands.sendTransInit();
-                        break;
+                switch (line) {
+
                     case "add":
                         Commands.sendTransAdd();
                         break;
@@ -138,9 +136,9 @@ public class Main {
                     case "query":
                         Commands.sendTransQuery();
                         break;
-                        default:
-                            System.out.println("Введите корректную команду (init, add... exit)");
-                            break;
+                    default:
+                        System.out.println("Введите корректную команду (add... exit)");
+                        break;
                 }
 
 

@@ -17,6 +17,7 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -127,16 +128,66 @@ public class Commands {
 
 
         } catch (Exception e) {
-            exceptionnally(e);
+            except(e);
             System.out.println(e.getMessage());
         }
 
     }
 
-    public static void sendTransAdd() {
+    public static void sendTransAdd() throws InterruptedException, ExecutionException, TimeoutException {
         System.out.println("Зашли в ADD");
         try {
             Collection<Orderer> orderers = Main.channel.getOrderers();
+//            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
+//
+//                if (transactionEvent.isValid()) {
+//                    try {
+//                        Main.client.setUserContext(org1_user);
+//                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "add", new String[]{"doc0", "hash0"});
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//
+//                return null;
+//
+//            }).thenApply(transactionEvent -> {
+//
+//                if (transactionEvent.isValid()) {
+//                    try {
+//                        Main.client.setUserContext(org1_user);
+//                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "update", new String[]{"doc0", "hash0", "hash1"});
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//
+//                return null;
+//
+//            }).thenApply(transactionEvent -> {
+//
+//                if (transactionEvent.isValid()) {
+//                    try {
+//                        Main.client.setUserContext(org1_user);
+//                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "query", new String[]{"doc0"});
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//
+//                return null;
+//
+//            }).exceptionally(e -> {
+//                if (e instanceof TransactionEventException) {
+//                    BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
+//                    if (te != null) {
+//                        System.out.println(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()));
+//                    }
+//                }
+//                System.out.println(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()));
+//
+//                return null;
+//            }).get(60, TimeUnit.SECONDS);
             Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
 
                 if (transactionEvent.isValid()) {
@@ -149,67 +200,106 @@ public class Commands {
 
                 }
                 return null;
-            });
+            }).get(60, TimeUnit.SECONDS);
         } catch (Exception e) {
-            exceptionnally(e);
+            e.printStackTrace();
+            except(e);
         }
-        System.out.println("Выходим из ADD");
-    }
 
+        System.out.println("Выходим из ADD");
+
+    }
     public static void sendTransUpdate() {
         System.out.println("Зашли в UPDATE");
+
+        QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
+        queryByChaincodeRequest.setArgs(new String[] {"doc0", "hash0", "hash1"});
+        queryByChaincodeRequest.setProposalWaitTime(12L);
+        queryByChaincodeRequest.setFcn("update");
+        queryByChaincodeRequest.setChaincodeID( Main.chaincodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
         try {
-            Collection<Orderer> orderers = Main.channel.getOrderers();
-
-            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
-
-                if (transactionEvent.isValid()) {
-                    try {
-                        Main.client.setUserContext(org1_user);
-                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "update", new String[]{"doc0", "hash0", "hash1"});
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                return null;
-
-            });
+            queryProposals =  Main.channel.queryByChaincode(queryByChaincodeRequest);
+            ProposalResponse response = queryProposals.iterator().next();
+            System.out.println(response.getStatus()+" : "+response.getMessage());
         } catch (Exception e) {
-            exceptionnally(e);
+            except(e);
         }
+
+//
+//        try {
+//            Collection<Orderer> orderers = Main.channel.getOrderers();
+//
+//            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
+//
+//               if (transactionEvent.isValid()) {
+//                    try {
+//                        Main.client.setUserContext(org1_user);
+//                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "update", new String[]{"doc0", "hash0", "hash1"});
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//               }
+//               return null;
+//
+//            }).get(60, TimeUnit.SECONDS);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            except(e);
+//        }
         System.out.println("Вышли из UPDATE");
     }
 
 
     public static void sendTransQuery() {
         System.out.println("Зашли в QUERY");
+//        try {
+//            Collection<Orderer> orderers = Main.channel.getOrderers();
+//
+//            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
+//
+//                if (transactionEvent.isValid()) {
+//                    try {
+//                        Main.client.setUserContext(org1_user);
+//                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "query", new String[]{"doc0"});
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//
+//                return null;
+//
+//            }).get(60, TimeUnit.SECONDS);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            except(e);
+//
+//        }
+        QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
+        queryByChaincodeRequest.setProposalWaitTime(12L);
+        queryByChaincodeRequest.setArgs(new String[] {"doc0"});
+        queryByChaincodeRequest.setFcn("query");
+        queryByChaincodeRequest.setChaincodeID( Main.chaincodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
         try {
-            Collection<Orderer> orderers = Main.channel.getOrderers();
-
-            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
-
-                if (transactionEvent.isValid()) {
-                    try {
-                        Main.client.setUserContext(org1_user);
-                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "query", new String[]{"doc0"});
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                return null;
-
-            });
+            queryProposals =  Main.channel.queryByChaincode(queryByChaincodeRequest);
+            ProposalResponse response = queryProposals.iterator().next();
+            System.out.println(response.getStatus()+" : "+response.getMessage());
         } catch (Exception e) {
-            exceptionnally(e);
-
+          except(e);
         }
-        System.out.println("Вышли из Query");
+
+
+
+        System.out.println("Вышли из QUERY");
     }
 
-    private static void exceptionnally(Exception e) {
-        System.out.println(e.getMessage());
+    private static void except(Exception e) {
+      //  System.out.println(e.getMessage());
         if (e instanceof TransactionEventException) {
             BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
             if (te != null) {
