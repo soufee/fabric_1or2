@@ -128,17 +128,18 @@ public class Main {
                 switch (line) {
 
                     case "add":
-                        System.out.println("Введите имя файла");
-                        Commands.sendTransAdd(scanner.nextLine());
+                        Commands.sendTransAdd("d:\\temp\\1.txt");
                         break;
                     case "update":
-                        Commands.sendTransUpdate();
+                        Commands.sendTransUpdate("d:\\temp\\1.txt");
                         break;
                     case "query":
                         Commands.sendTransQuery();
                         break;
+                    case "get":
+                        Commands.getOldHash("d:\\temp\\1.txt");
                     default:
-                        System.out.println("Введите корректную команду (add... exit)");
+                        System.out.println();
                         break;
                 }
 

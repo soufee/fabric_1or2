@@ -117,7 +117,7 @@ public class Commands {
             tmap.put("test", "data".getBytes());
             instantiateProposalRequest.setTransientMap(tmap);
 
-            responses = Main.channel.sendInstantiationProposal(instantiateProposalRequest);
+            responses = Main.channel.sendInstantiationProposal(instantiateProposalRequest, Main.channel.getPeers());
 
             for (ProposalResponse response : responses) {
                 if (response.isVerified() && response.getStatus() == ProposalResponse.Status.SUCCESS) {
@@ -211,21 +211,24 @@ public class Commands {
 
     }
 
-    public static void sendTransUpdate() {
+    public static void sendTransUpdate(String fileName) {
         System.out.println("Зашли в UPDATE");
-
-        QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{"D:\\Temp\\1.txt", "c96eb47e582e500d5445c66791445708", "c96eb47e582e500d5445c66791445708"+"hash1"});
-        queryByChaincodeRequest.setProposalWaitTime(12L);
-        queryByChaincodeRequest.setFcn("update");
-        queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
-
-        Collection<ProposalResponse> queryProposals;
-
         try {
-            queryProposals = Main.channel.queryByChaincode(queryByChaincodeRequest);
+            TransactionProposalRequest queryByChaincodeRequest = Main.client.newTransactionProposalRequest();
+            String oldHash = getOldHash(fileName);
+            String newHash = HashFileManager.getFilehash(fileName);
+            System.out.println("new hash : "+newHash);
+            queryByChaincodeRequest.setArgs(new String[]{fileName,oldHash , newHash});
+            queryByChaincodeRequest.setProposalWaitTime(120000);
+            queryByChaincodeRequest.setFcn("update");
+            queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
+
+            Collection<ProposalResponse> queryProposals;
+            queryProposals = Main.channel.sendTransactionProposal(queryByChaincodeRequest,Main.channel.getPeers());
             ProposalResponse response = queryProposals.iterator().next();
             System.out.println(response.getStatus() + " : " + response.getMessage());
+
+            Main.channel.sendTransaction(queryProposals).get(120, TimeUnit.SECONDS);
         } catch (Exception e) {
             except(e);
         }
@@ -279,18 +282,22 @@ public class Commands {
 //            except(e);
 //
 //        }
-        QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
-        queryByChaincodeRequest.setProposalWaitTime(12L);
-        queryByChaincodeRequest.setArgs(new String[]{"d:\\Temp\\1.txt"});
-        queryByChaincodeRequest.setFcn("query");
-        queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
-
-        Collection<ProposalResponse> queryProposals;
-
         try {
-            queryProposals = Main.channel.queryByChaincode(queryByChaincodeRequest);
+            QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
+            queryByChaincodeRequest.setArgs(new String[]{"d:\\temp\\1.txt"});
+            queryByChaincodeRequest.setFcn("query");
+            queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
+
+            Collection<ProposalResponse> queryProposals;
+
+
+            queryProposals = Main.channel.queryByChaincode(queryByChaincodeRequest, Main.channel.getPeers());
             ProposalResponse response = queryProposals.iterator().next();
             System.out.println(response.getStatus() + " : " + response.getMessage());
+            String result = new String(response.getChaincodeActionResponsePayload(), "UTF-8");
+            System.out.println(result);
+
+
         } catch (Exception e) {
             except(e);
         }
@@ -298,6 +305,36 @@ public class Commands {
 
         System.out.println("Вышли из QUERY");
     }
+
+    public static String getOldHash(String fileName) {
+        System.out.println("Зашли в GET");
+        try {
+
+            TransactionProposalRequest queryByChaincodeRequest = Main.client.newTransactionProposalRequest();
+            queryByChaincodeRequest.setProposalWaitTime(12L);
+            queryByChaincodeRequest.setArgs(new String[]{fileName});
+            queryByChaincodeRequest.setFcn("get");
+            queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
+
+            Collection<ProposalResponse> queryProposals;
+            queryProposals = Main.channel.sendTransactionProposal(queryByChaincodeRequest,Main.channel.getPeers());
+            ProposalResponse response = queryProposals.iterator().next();
+
+            System.out.println(response.getStatus() + " : " + response.getMessage());
+            String result = new String(response.getChaincodeActionResponsePayload(), "UTF-8");
+            System.out.println(result);
+            return result;
+
+        } catch (Exception e) {
+            except(e);
+        }
+
+
+        System.out.println("Выходим из GET");
+        return "Что-то пошло не так";
+
+    }
+
 
     private static void except(Exception e) {
         //  System.out.println(e.getMessage());
@@ -311,156 +348,6 @@ public class Commands {
 
 
     }
-
-
-//
-//        Collection<Orderer> orderers =  Main.channel.getOrderers();
-//        try {
-//            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
-//
-//                try {
-//                    successful.clear();
-//
-//                    Main.client.setUserContext(org1_user);
-//
-//                    TransactionProposalRequest transactionProposalRequest = Main.client.newTransactionProposalRequest();
-//                    transactionProposalRequest.setChaincodeID(Main.chaincodeID);
-//                    transactionProposalRequest.setFcn("update");
-//                    transactionProposalRequest.setProposalWaitTime(120000);
-//                    transactionProposalRequest.setArgs(new String[] {"doc0", "hash0", "hash1"});
-//
-//                    Map<String, byte[]> tm2 = new HashMap<>();
-//                    tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8));
-//                    tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8));
-//                    tm2.put("result", ":)".getBytes(UTF_8));  /// This should be returned see chaincode.
-//                    transactionProposalRequest.setTransientMap(tm2);
-//
-//                    Collection<ProposalResponse> transactionPropResp = Main.channel.sendTransactionProposal(transactionProposalRequest, Main.channel.getPeers());
-//                    for (ProposalResponse response : transactionPropResp) {
-//                        System.out.println(response.getStatus()+" : "+response.getMessage());
-//                        if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
-//                            successful.add(response);
-//                        }
-//                    }
-//
-//                    Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils.getProposalConsistencySets(transactionPropResp);
-//                    if (proposalConsistencySets.size() != 1) {
-//                        System.out.println(format("Expected only one set of consistent proposal responses but got %d", proposalConsistencySets.size()));
-//                    }
-//
-//
-//                    ProposalResponse resp = transactionPropResp.iterator().next();
-//                    byte[] x = resp.getChaincodeActionResponsePayload(); // This is the data returned by the chaincode.
-//                    String resultAsString = null;
-//                    if (x != null) {
-//                        resultAsString = new String(x, "UTF-8");
-//                    }
-//                    System.out.println(resp.getChaincodeActionResponseStatus() + ": " + resultAsString);
-//
-////                    TxReadWriteSetInfo readWriteSetInfo = resp.getChaincodeActionResponseReadWriteSetInfo();
-////
-////
-////                    ChaincodeID cid = resp.getChaincodeID();
-//
-//                    return Main.channel.sendTransaction(successful).get(30, TimeUnit.SECONDS);
-//
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//
-//                return null;
-//
-//            }).exceptionally(e -> {
-//                if (e instanceof TransactionEventException) {
-//                    BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
-//                    if (te != null) {
-//                        System.out.println(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()));
-//                    }
-//                }
-//                System.out.println(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()));
-//
-//                return null;
-//            }).get(120, TimeUnit.SECONDS);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
-//
-
-    //
-//    public static void sendTransAdd() {
-//
-//        Collection<Orderer> orderers =  Main.channel.getOrderers();
-//        try {
-//            Main.channel.sendTransaction(successful, orderers).thenApply(transactionEvent -> {
-//
-//                try {
-//                    successful.clear();
-//
-//                    Main.client.setUserContext(org1_user);
-//
-//                    TransactionProposalRequest transactionProposalRequest = Main.client.newTransactionProposalRequest();
-//                    transactionProposalRequest.setChaincodeID(Main.chaincodeID);
-//                    transactionProposalRequest.setFcn("add");
-//                    transactionProposalRequest.setProposalWaitTime(120000);
-//                    transactionProposalRequest.setArgs(new String[] {"doc0", "hash0"});
-//
-//                    Map<String, byte[]> tm2 = new HashMap<>();
-//                    tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8));
-//                    tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8));
-//                    tm2.put("result", ":)".getBytes(UTF_8));  /// This should be returned see chaincode.
-//                    transactionProposalRequest.setTransientMap(tm2);
-//
-//                    Collection<ProposalResponse> transactionPropResp = Main.channel.sendTransactionProposal(transactionProposalRequest, Main.channel.getPeers());
-//                    for (ProposalResponse response : transactionPropResp) {
-//                        System.out.println(response.getStatus()+" : "+response.getMessage());
-//                        if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
-//                            successful.add(response);
-//                        }
-//                    }
-//
-//                    Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils.getProposalConsistencySets(transactionPropResp);
-//                    if (proposalConsistencySets.size() != 1) {
-//                        System.out.println(format("Expected only one set of consistent proposal responses but got %d", proposalConsistencySets.size()));
-//                    }
-//
-//                    ProposalResponse resp = transactionPropResp.iterator().next();
-//                    byte[] x = resp.getChaincodeActionResponsePayload(); // This is the data returned by the chaincode.
-//                    String resultAsString = null;
-//                    if (x != null) {
-//                        resultAsString = new String(x, "UTF-8");
-//                    }
-//                    System.out.println(resp.getChaincodeActionResponseStatus() + ": " + resultAsString);
-//
-////                    TxReadWriteSetInfo readWriteSetInfo = resp.getChaincodeActionResponseReadWriteSetInfo();
-////
-////
-////                    ChaincodeID cid = resp.getChaincodeID();
-//
-//                    return Main.channel.sendTransaction(successful).get(30, TimeUnit.SECONDS);
-//
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//
-//                return null;
-//
-//            }).exceptionally(e -> {
-//                if (e instanceof TransactionEventException) {
-//                    BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
-//                    if (te != null) {
-//                        System.out.println(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()));
-//                    }
-//                }
-//                System.out.println(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()));
-//
-//                return null;
-//            }).get(120, TimeUnit.SECONDS);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
 
 
 }

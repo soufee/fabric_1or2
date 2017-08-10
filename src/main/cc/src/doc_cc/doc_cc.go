@@ -37,10 +37,16 @@ func (t *DocChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	} else if function == "update" {
 		// Update document, parameters: name, previous_hash, current_hash
 		return t.update(stub, args)
+	} else if function == "get" {
+		// Get document, parameters: name
+		return t.get(stub, args)
 	} else if function == "query" {
 		// Get history of document changes, parameters: name
 		return t.query(stub, args)
 	}
+
+
+	logger.Info("Invoke error.")
 
 	return shim.Error("Invalid invoke function name. Expecting \"add\" \"update\" \"query\".")
 }
@@ -48,7 +54,8 @@ func (t *DocChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 // add puts document into KVS, parameters: name, current_hash
 func (t *DocChaincode) add(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
-	logger.Info("add started")
+	logger.Info("Add started.")
+
 	if len(args) != 2 {
 		return shim.Error("Incorrect number of arguments. Expecting name of document and its hash.")
 	}
@@ -72,12 +79,17 @@ func (t *DocChaincode) add(stub shim.ChaincodeStubInterface, args []string) pb.R
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	logger.Info("add finished")
+
+
+	logger.Info("Add finished.")
+
 	return shim.Success(nil)
 }
 
 // update puts new document hash into KVS, parameters: name, current_hash
 func (t *DocChaincode) update(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	logger.Info("Update started.")
 
 	if len(args) != 3 {
 		return shim.Error("Incorrect number of arguments. Expecting name of document and its previous hash and new hash.")
@@ -108,11 +120,42 @@ func (t *DocChaincode) update(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error(err.Error())
 	}
 
+	logger.Info("Update finished.")
+
 	return shim.Success(nil)
+}
+
+// get returns document hash from KVS, parameters: name
+func (t *DocChaincode) get(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	logger.Info("Get started.")
+
+	if len(args) != 1 {
+		return shim.Error("Incorrect number of arguments. Expecting name of document.")
+	}
+
+	var Name string
+	Name = args[0]
+
+	CurrentHash, err := stub.GetState(Name)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	if CurrentHash == nil {
+		return shim.Error("File \"" + Name + "\" doesnt exist in storage.")
+	}
+
+	logger.Info("Get finished:", string(CurrentHash))
+
+	return shim.Success(CurrentHash)
 }
 
 // query gets history of document changes from KVS, parameters: name
 func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	logger.Info("Query started.")
 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting name of document.")
@@ -150,7 +193,7 @@ func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb
 		buffer.WriteString("\"")
 
 		buffer.WriteString(", \"Value\":")
-
+		buffer.WriteString("\"")
 		// If it was a delete operation on given key, then we need to set the corresponding value null.
 		// Else, we will write the response.Value as-is
 		if response.IsDelete {
@@ -158,6 +201,7 @@ func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb
 		} else {
 			buffer.WriteString(string(response.Value))
 		}
+		buffer.WriteString("\"")
 
 		buffer.WriteString(", \"Timestamp\":")
 		buffer.WriteString("\"")
@@ -174,6 +218,8 @@ func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 
 	buffer.WriteString("]")
+
+	logger.Info("Query finished:", buffer.String())
 
 	return shim.Success(buffer.Bytes())
 }
