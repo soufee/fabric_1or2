@@ -128,7 +128,8 @@ public class Main {
                 switch (line) {
 
                     case "add":
-                        Commands.sendTransAdd();
+                        System.out.println("Введите имя файла");
+                        Commands.sendTransAdd(scanner.nextLine());
                         break;
                     case "update":
                         Commands.sendTransUpdate();

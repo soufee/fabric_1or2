@@ -10,6 +10,7 @@ import org.hyperledger.fabric.sdk.exception.TransactionEventException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.exception.RegistrationException;
+import src.HashFileManager;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
@@ -134,7 +135,7 @@ public class Commands {
 
     }
 
-    public static void sendTransAdd() throws InterruptedException, ExecutionException, TimeoutException {
+    public static void sendTransAdd(String fileName) throws InterruptedException, ExecutionException, TimeoutException {
         System.out.println("Зашли в ADD");
         try {
             Collection<Orderer> orderers = Main.channel.getOrderers();
@@ -193,14 +194,14 @@ public class Commands {
                 if (transactionEvent.isValid()) {
                     try {
                         Main.client.setUserContext(org1_user);
-                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "add", new String[]{"doc0", "hash0"});
+                        return invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "add", new String[]{fileName, HashFileManager.getFilehash(fileName)});
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
 
                 }
                 return null;
-            }).get(60, TimeUnit.SECONDS);
+            }).get(30, TimeUnit.SECONDS);
         } catch (Exception e) {
             e.printStackTrace();
             except(e);
@@ -209,21 +210,22 @@ public class Commands {
         System.out.println("Выходим из ADD");
 
     }
+
     public static void sendTransUpdate() {
         System.out.println("Зашли в UPDATE");
 
         QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[] {"doc0", "hash0", "hash1"});
+        queryByChaincodeRequest.setArgs(new String[]{"D:\\Temp\\1.txt", "c96eb47e582e500d5445c66791445708", "c96eb47e582e500d5445c66791445708"+"hash1"});
         queryByChaincodeRequest.setProposalWaitTime(12L);
         queryByChaincodeRequest.setFcn("update");
-        queryByChaincodeRequest.setChaincodeID( Main.chaincodeID);
+        queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
 
         Collection<ProposalResponse> queryProposals;
 
         try {
-            queryProposals =  Main.channel.queryByChaincode(queryByChaincodeRequest);
+            queryProposals = Main.channel.queryByChaincode(queryByChaincodeRequest);
             ProposalResponse response = queryProposals.iterator().next();
-            System.out.println(response.getStatus()+" : "+response.getMessage());
+            System.out.println(response.getStatus() + " : " + response.getMessage());
         } catch (Exception e) {
             except(e);
         }
@@ -279,27 +281,26 @@ public class Commands {
 //        }
         QueryByChaincodeRequest queryByChaincodeRequest = Main.client.newQueryProposalRequest();
         queryByChaincodeRequest.setProposalWaitTime(12L);
-        queryByChaincodeRequest.setArgs(new String[] {"doc0"});
+        queryByChaincodeRequest.setArgs(new String[]{"d:\\Temp\\1.txt"});
         queryByChaincodeRequest.setFcn("query");
-        queryByChaincodeRequest.setChaincodeID( Main.chaincodeID);
+        queryByChaincodeRequest.setChaincodeID(Main.chaincodeID);
 
         Collection<ProposalResponse> queryProposals;
 
         try {
-            queryProposals =  Main.channel.queryByChaincode(queryByChaincodeRequest);
+            queryProposals = Main.channel.queryByChaincode(queryByChaincodeRequest);
             ProposalResponse response = queryProposals.iterator().next();
-            System.out.println(response.getStatus()+" : "+response.getMessage());
+            System.out.println(response.getStatus() + " : " + response.getMessage());
         } catch (Exception e) {
-          except(e);
+            except(e);
         }
-
 
 
         System.out.println("Вышли из QUERY");
     }
 
     private static void except(Exception e) {
-      //  System.out.println(e.getMessage());
+        //  System.out.println(e.getMessage());
         if (e instanceof TransactionEventException) {
             BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
             if (te != null) {
