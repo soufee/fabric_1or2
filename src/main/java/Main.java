@@ -23,17 +23,17 @@ public class Main {
     public static final String CHANELTX = "src/main/env/channel/channel.tx";
     public static final String ADMINSECRET = "adminpw";
     public static final String MSPID = "Org1MSP";
-    public static final String CHAIN_CODE_PATH = "/chaincode";
+    public static final String CHAIN_CODE_PATH = "doc_cc";
     public static final String CHAIN_CODE_VERSION = "1";
-    public static final String CHAIN_CODE_NAME = "doc_go";
+    public static final String CHAIN_CODE_NAME = "doc_cc_go";
 
     public static HFClient client;
     public static Peer peer;
     public static Channel channel;
     public static Orderer orderer;
     public static FCUser org1_user;
-    public static ChaincodeID chaincodeID;
-    public static InstallProposalRequest installProposalRequest;
+
+  //  public static InstallProposalRequest installProposalRequest;
     public static FCUser org1_peer_admin;
     public static HFCAClient org1_ca;
     public static FCUser org1_admin;
@@ -41,6 +41,10 @@ public class Main {
     public static File certificateFile;
     public static File privateKeyFile;
     public static PrivateKey privateKey;
+  public static  ChaincodeEndorsementPolicy chaincodeEndorsementPolicy;
+    public final static ChaincodeID chaincodeID =  ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
+            .setVersion(CHAIN_CODE_VERSION)
+            .setPath(CHAIN_CODE_PATH).build();
 
     public static void main(String[] args) {
         try {
@@ -54,18 +58,25 @@ public class Main {
             channel = OpenChannel.openChannel("mychannel");
 
             //------------------------------------------------------
-            chaincodeID = ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                    .setVersion(CHAIN_CODE_VERSION)
-                    .setPath(CHAIN_CODE_PATH).build();
 
+            System.out.println("ChaincodeID: "+chaincodeID.getPath()+" "+chaincodeID.getName());
             Set<Peer> peersFromOrg = new HashSet<>();
             peersFromOrg.add(peer);
-            installProposalRequest = client.newInstallProposalRequest();
+
+             chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
+            chaincodeEndorsementPolicy.fromYamlFile(new File("src/main/env/chaincodeendorsementpolicy.yaml"));
+
+            InstallProposalRequest   installProposalRequest = client.newInstallProposalRequest();
             installProposalRequest.setChaincodeID(chaincodeID);
-installProposalRequest.setChaincodeSourceLocation(new File("src/main/java"));
-installProposalRequest.setChaincodeVersion(CHAIN_CODE_VERSION);
+
+        //    installProposalRequest.setChaincodeSourceLocation(new File("src/main/java"));
+
+            File initialFile = new File("src/main/cc/src/doc_cc");
+
+            installProposalRequest.setChaincodeInputStream(Util.generateTarGzInputStream(initialFile, "src/doc_cc"));
+            installProposalRequest.setChaincodeVersion(CHAIN_CODE_VERSION);
             installProposalRequest.setProposalWaitTime(120000);
-            installProposalRequest.setUserContext(org1_user);
+            installProposalRequest.setUserContext(org1_peer_admin);
 //            File initialFile = new File("C:\\Users\\Shomakhov\\go_cc");
 //            installProposalRequest.setChaincodeSourceLocation(initialFile);
 
@@ -109,13 +120,31 @@ installProposalRequest.setChaincodeVersion(CHAIN_CODE_VERSION);
             orderers.add(orderer);
             channel.sendTransaction(responses, orderers);
 
-        Scanner scanner = new Scanner(System.in);
-        String line = "";
-        while (!(line.equals("exit"))){
-            line = scanner.nextLine();
-            if (line.equals("init")) {HashMaker.sendTransInit();}
-            else if (line.equals("add")){HashMaker.sendTransAdd();}
-        }
+            Scanner scanner = new Scanner(System.in);
+            String line = "";
+            System.out.println("Введите команду...");
+            while (!(line.equals("exit"))) {
+                line = scanner.nextLine();
+                switch (line){
+                    case "init":
+                        Commands.sendTransInit();
+                        break;
+                    case "add":
+                        Commands.sendTransAdd();
+                        break;
+                    case "update":
+                        Commands.sendTransUpdate();
+                        break;
+                    case "query":
+                        Commands.sendTransQuery();
+                        break;
+                        default:
+                            System.out.println("Введите корректную команду (init, add... exit)");
+                            break;
+                }
+
+
+            }
 
             channel.shutdown(true);
 
