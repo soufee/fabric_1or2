@@ -1,17 +1,13 @@
-import com.google.protobuf.ByteString;
-import org.hyperledger.fabric.protos.common.Common;
-import org.hyperledger.fabric.protos.peer.FabricProposal;
-import org.hyperledger.fabric.protos.peer.FabricProposalResponse;
 import org.hyperledger.fabric.sdk.*;
-import org.hyperledger.fabric.sdk.transaction.TransactionBuilder;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 
-import java.io.*;
+import java.io.File;
 import java.security.PrivateKey;
-import java.util.*;
+import java.util.Properties;
+import java.util.Scanner;
 
 /**
- * Created by user on 21.07.2017.
+ * Created by shomakhov on 11.08.2017.
  */
 public class Main {
     public static final String IP = "192.168.99.100";
@@ -53,105 +49,49 @@ public class Main {
             properties.setProperty("allowAllHostNames", "true");
             properties.setProperty("pemFile", cf.getAbsolutePath());
 
-
-            RegisterUser.register("Ashamaz");
+            RegisterUser.register("qweqe");
             channel = OpenChannel.openChannel("mychannel");
-
-            //------------------------------------------------------
-
-            System.out.println("ChaincodeID: " + chaincodeID.getPath() + " " + chaincodeID.getName());
-            Set<Peer> peersFromOrg = new HashSet<>();
-            peersFromOrg.add(peer);
-
-            chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
-            chaincodeEndorsementPolicy.fromYamlFile(new File("src/main/env/chaincodeendorsementpolicy.yaml"));
-
-            InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
-            installProposalRequest.setChaincodeID(chaincodeID);
-
-            //    installProposalRequest.setChaincodeSourceLocation(new File("src/main/java"));
-
-            File initialFile = new File("src/main/cc/src/doc_cc");
-
-            installProposalRequest.setChaincodeInputStream(Util.generateTarGzInputStream(initialFile, "src/doc_cc"));
-            installProposalRequest.setChaincodeVersion(CHAIN_CODE_VERSION);
-            installProposalRequest.setProposalWaitTime(120000);
-            installProposalRequest.setUserContext(org1_peer_admin);
-//            File initialFile = new File("C:\\Users\\Shomakhov\\go_cc");
-//            installProposalRequest.setChaincodeSourceLocation(initialFile);
-
-            //-----------------------------------------------------------------------
-
-            Collection<ProposalResponse> responses = client.sendInstallProposal(installProposalRequest, peersFromOrg);
-
-            List<FabricProposalResponse.Endorsement> ed = new LinkedList<>();
-            FabricProposal.Proposal proposal = null;
-            ByteString proposalResponsePayload = ByteString.copyFromUtf8("1234");
-
-            for (ProposalResponse sdkProposalResponse : responses) {
-                try {
-                    System.out.println(sdkProposalResponse.getStatus());
-                    System.out.println(sdkProposalResponse.getMessage());
-
-                    FabricProposalResponse.Endorsement element = sdkProposalResponse.getProposalResponse().getEndorsement();
-                    ed.add(element);
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
-                if (proposal == null) {
-                    proposal = sdkProposalResponse.getProposal();
-                    //  proposalTransactionID = sdkProposalResponse.getTransactionID();
-                    proposalResponsePayload = sdkProposalResponse.getProposalResponse().getPayload();
-                }
-            }
-
-            TransactionBuilder transactionBuilder = TransactionBuilder.newBuilder();
-            Common.Payload transactionPayload = transactionBuilder
-                    .chaincodeProposal(proposal)
-                    .endorsements(ed)
-                    .proposalResponsePayload(proposalResponsePayload).build();
-
-            Common.Envelope transactionEnvelope = Common.Envelope.newBuilder()
-                    .setPayload(transactionPayload.toByteString())
-                    .setSignature(ByteString.copyFrom(client.getCryptoSuite().sign(org1_user.getEnrollment().getKey(), transactionPayload.toByteArray())))
-                    .build();
-
-            Collection<Orderer> orderers = new ArrayList<>();
-            orderers.add(orderer);
-            channel.sendTransaction(responses, orderers);
+            SetChainCode.setChainCode();
             Commands.sendTransInit();
-            Scanner scanner = new Scanner(System.in);
-            String line = "";
-            System.out.println("Введите команду...");
-            while (!(line.equals("exit"))) {
-                line = scanner.nextLine();
-                switch (line) {
+        } catch (Exception e){
+            System.out.println(e.getMessage());
+        }
 
-                    case "add":
-                        Commands.sendTransAdd("d:\\temp\\1.txt");
-                        break;
-                    case "update":
-                        Commands.sendTransUpdate("d:\\temp\\1.txt");
-                        break;
-                    case "query":
-                        Commands.sendTransQuery();
-                        break;
-                    case "get":
-                        Commands.getOldHash("d:\\temp\\1.txt");
-                    default:
-                        System.out.println();
-                        break;
-                }
+        System.out.println("Введите команду...");
+        Scanner scanner = new Scanner(System.in);
+        String line = "";
 
+        while (!(line.equals("exit"))) {
+            line = scanner.nextLine();
+            switch (line) {
 
+                case "add":
+                    System.out.println("Введите имя файла");
+                    Commands.sendTransAdd(scanner.nextLine());
+                    break;
+                case "update":
+                    System.out.println("Введите имя файла");
+                    Commands.sendTransUpdate(scanner.nextLine());
+                    break;
+                case "query":
+                    System.out.println("Введите имя файла");
+                    Commands.sendTransQuery(scanner.nextLine());
+                    break;
+                case "get":
+                    System.out.println("Введите имя файла");
+                    Commands.getOldHash(scanner.nextLine());
+                default:
+                    if (!(line.equals("exit")))
+                        System.out.println("Введите команду");
+                    else
+                        break;
             }
 
-            channel.shutdown(true);
 
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+
+        channel.shutdown(true);
+
+
     }
-
-
 }

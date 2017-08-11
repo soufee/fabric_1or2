@@ -58,7 +58,6 @@ public class OpenChannel {
             cf = new File(Main.PEERSERVER);
             peerProperties.setProperty("pemFile", cf.getAbsolutePath());
             peerProperties.setProperty("peerOrg1.mspid", "Org1MSP");
-
             peerProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
             peerProperties.setProperty("sslProvider", "openSSL");
             peerProperties.setProperty("negotiationType", "TLS");
