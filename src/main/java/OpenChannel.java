@@ -25,73 +25,71 @@ import java.util.concurrent.TimeUnit;
 public class OpenChannel {
     public static  Channel channel;
     public static EventHub eventHub;
-    public static Channel openChannel(String channelName) {
-        try {
-            destroyChannel();
-            Main.certificateFile = Paths.get(Main.SERTIFICATEPATH).toFile();
-            Main.privateKeyFile = Paths.get(Main.PRIVATKEY).toFile();
 
-            String certificate = new String(IOUtils.toByteArray(new FileInputStream(Main.certificateFile.getAbsolutePath())), "UTF-8");
+    public static Channel openChannel(String channelName) throws Exception{
+
+        destroyChannel();
+        Main.certificateFile = Paths.get(Main.SERTIFICATEPATH).toFile();
+        Main.privateKeyFile = Paths.get(Main.PRIVATKEY).toFile();
+
+        String certificate = new String(IOUtils.toByteArray(new FileInputStream(Main.certificateFile.getAbsolutePath())), "UTF-8");
 
 
-            Main.privateKey = getPrivateKeyFromBytes(IOUtils.toByteArray(new FileInputStream(Main.privateKeyFile.getAbsolutePath())));
-            Main.org1_peer_admin = new FCUser("Org1Admin");
-            Main.org1_peer_admin.setMspId(Main.MSPID);
+        Main.privateKey = getPrivateKeyFromBytes(IOUtils.toByteArray(new FileInputStream(Main.privateKeyFile.getAbsolutePath())));
+        Main.org1_peer_admin = new FCUser("Org1Admin");
+        Main.org1_peer_admin.setMspId(Main.MSPID);
 
-            Main.org1_peer_admin.setEnrollment(new FCEnrollment(Main.privateKey, certificate));
+        Main.org1_peer_admin.setEnrollment(new FCEnrollment(Main.privateKey, certificate));
 
-            Main.client = HFClient.createNewInstance();
-            Main.client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-            Main.client.setUserContext(Main.org1_peer_admin);
+        Main.client = HFClient.createNewInstance();
+        Main.client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
+        Main.client.setUserContext(Main.org1_peer_admin);
 
-            File cf = new File(Main.SERVERCRT);
-            Properties ordererProperties = new Properties();
-            ordererProperties.setProperty("pemFile", cf.getAbsolutePath());
-            ordererProperties.setProperty("hostnameOverride", "orderer.example.com");
-            ordererProperties.setProperty("sslProvider", "openSSL");
-            ordererProperties.setProperty("negotiationType", "TLS");
-            ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
-            ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
-            Main.orderer = Main.client.newOrderer("orderer.example.com", "grpc://" + Main.IP + ":7050", ordererProperties);
+        File cf = new File(Main.SERVERCRT);
+        Properties ordererProperties = new Properties();
+        ordererProperties.setProperty("pemFile", cf.getAbsolutePath());
+        ordererProperties.setProperty("hostnameOverride", "orderer.example.com");
+        ordererProperties.setProperty("sslProvider", "openSSL");
+        ordererProperties.setProperty("negotiationType", "TLS");
+        ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
+        ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
+        Main.orderer = Main.client.newOrderer("orderer.example.com", "grpc://" + Main.IP + ":7050", ordererProperties);
 
-            Properties peerProperties = new Properties();
-            cf = new File(Main.PEERSERVER);
-            peerProperties.setProperty("pemFile", cf.getAbsolutePath());
-            peerProperties.setProperty("peerOrg1.mspid", "Org1MSP");
-            peerProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
-            peerProperties.setProperty("sslProvider", "openSSL");
-            peerProperties.setProperty("negotiationType", "TLS");
-            peerProperties.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
-            Main.peer = Main.client.newPeer("peer0.org1.example.com", "grpc://" + Main.IP + ":7051", peerProperties);
+        Properties peerProperties = new Properties();
+        cf = new File(Main.PEERSERVER);
+        peerProperties.setProperty("pemFile", cf.getAbsolutePath());
+        peerProperties.setProperty("peerOrg1.mspid", "Org1MSP");
+        peerProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
+        peerProperties.setProperty("sslProvider", "openSSL");
+        peerProperties.setProperty("negotiationType", "TLS");
+        peerProperties.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
+        Main.peer = Main.client.newPeer("peer0.org1.example.com", "grpc://" + Main.IP + ":7051", peerProperties);
 
-            Properties ehProperties = new Properties();
-            cf = new File(Main.PEERSERVER);
-            ehProperties.setProperty("pemFile", cf.getAbsolutePath());
-            ehProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
-            ehProperties.setProperty("sslProvider", "openSSL");
-            ehProperties.setProperty("negotiationType", "TLS");
-            ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
-            ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
-            eventHub = Main.client.newEventHub("peer0.org1.example.com", "grpc://" + Main.IP + ":7053", ehProperties);
+        Properties ehProperties = new Properties();
+        cf = new File(Main.PEERSERVER);
+        ehProperties.setProperty("pemFile", cf.getAbsolutePath());
+        ehProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
+        ehProperties.setProperty("sslProvider", "openSSL");
+        ehProperties.setProperty("negotiationType", "TLS");
+        ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
+        ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
+        eventHub = Main.client.newEventHub("peer0.org1.example.com", "grpc://" + Main.IP + ":7053", ehProperties);
 
-            ChannelConfiguration channelConfiguration = new ChannelConfiguration(new File(Main.CHANELTX));
+        ChannelConfiguration channelConfiguration = new ChannelConfiguration(new File(Main.CHANELTX));
 
-          channel = Main.client.newChannel(channelName, Main.orderer, channelConfiguration,
-                   Main.client.getChannelConfigurationSignature(channelConfiguration, Main.org1_peer_admin));
+        channel = Main.client.newChannel(channelName, Main.orderer, channelConfiguration,
+                Main.client.getChannelConfigurationSignature(channelConfiguration, Main.org1_peer_admin));
 
-            channel.addOrderer(Main.orderer);
-           // channel.addPeer(Main.peer);
-            channel.joinPeer(Main.peer);
-            channel.addEventHub(eventHub);
+        channel.addOrderer(Main.orderer);
+        // channel.addPeer(Main.peer);
+        channel.joinPeer(Main.peer);
+        channel.addEventHub(eventHub);
 
-            channel.initialize();
-            System.out.println(channel.getName() + " created!");
-            return channel;
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
+        channel.initialize();
+        System.out.println(channel.getName() + " created!");
+        return channel;
+
+
 
     }
 
@@ -117,8 +115,8 @@ public class OpenChannel {
         Main.orderer = null;
         Main.peer = null;
         if (channel!=null){
-       channel.shutdown(true);
-        channel = null;}
+            channel.shutdown(true);
+            channel = null;}
         eventHub = null;
 
     }
