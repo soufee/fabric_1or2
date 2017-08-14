@@ -58,12 +58,13 @@ public class Main {
             int mode = in.nextInt();
             if(mode==1){
                 PropertiesManager.SetProperties(properties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Hostnames.properties");
-                RegisterUser.register("asadssdass6");
+                RegisterUser.register("asadssdass7");
             channel = OpenChannel.openChannel("mychannel");
            SetChainCode.setChainCode();
             Commands.sendTransInit();}
             else{channel = RestoreManager.Restore();
-            SetChainCode.setChainCode();}
+            //SetChainCode.setChainCode();
+            }
         } catch (RegistrationException e){
             e.printStackTrace();
             System.out.println("Перезапусти докер");
@@ -107,7 +108,7 @@ public class Main {
 
         }
 
-       // channel.shutdown(true);
+        channel.shutdown(true);
 
 
     }

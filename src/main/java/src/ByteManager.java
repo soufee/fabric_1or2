@@ -41,15 +41,29 @@ public class ByteManager {
     };
 
 
-    public static PrivateKey getPK(String input) throws PEMException {
-        //String original = input.split(" ")[4];
-        String pk = input.substring(32,input.length()-2);
-        final Reader pemReader = new StringReader(pk);
-        PrivateKeyInfo pemPair=null;
+//    public static PrivateKey getPK(String input) throws PEMException {
+//        //String original = input.split(" ")[4];
+//      //  String pk = input.substring(32,input.length()-2);
+//        final Reader pemReader = new StringReader(input);
+//        PrivateKeyInfo pemPair=null;
+//        try (PEMParser pemParser = new PEMParser(pemReader)) {
+//            pemPair = (PrivateKeyInfo) pemParser.readObject();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        PrivateKey privateKey = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME).getPrivateKey(pemPair);
+//
+//        return privateKey;
+//    }
+
+
+ public    static PrivateKey getPrivateKeyFromBytes(byte[] data) throws Exception {
+        final Reader pemReader = new StringReader(new String(data));
+
+        PrivateKeyInfo pemPair;
         try (PEMParser pemParser = new PEMParser(pemReader)) {
             pemPair = (PrivateKeyInfo) pemParser.readObject();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         PrivateKey privateKey = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME).getPrivateKey(pemPair);

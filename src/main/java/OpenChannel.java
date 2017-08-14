@@ -8,14 +8,12 @@ import org.hyperledger.fabric.sdk.ChannelConfiguration;
 import org.hyperledger.fabric.sdk.EventHub;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
-import org.hyperledger.fabric_ca.sdk.HFCAClient;
+import src.ByteManager;
+import src.NewPK;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -34,8 +32,22 @@ public class OpenChannel {
 
         String certificate = new String(IOUtils.toByteArray(new FileInputStream(Main.certificateFile.getAbsolutePath())), "UTF-8");
 
+//ObjectInputStream data = new ObjectInputStream(Main.privateKeyFile.getAbsolutePath());
+//Byte[] data2 = data;
+Properties prop = new Properties();
+//String str = null;//String.valueOf(data);
+//prop.put("byte",str);
 
         Main.privateKey = getPrivateKeyFromBytes(IOUtils.toByteArray(new FileInputStream(Main.privateKeyFile.getAbsolutePath())));
+        prop.setProperty("privateKey", String.valueOf(Main.privateKey));
+//     StringBuffer sb = new StringBuffer();
+//        for (byte b:ByteManager.Convert("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\env\\channel\\crypto-config\\peerOrganizations\\org1.example.com\\ca\\ca.org1.example.com-cert.pem")
+//             ) { sb.append(b);
+//             sb.append(" ");
+//
+//        }
+//        prop.setProperty("bytes",sb.toString());
+       PropertiesManager.SetProperties(prop,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\data.properties");
         Main.org1_peer_admin = new FCUser("Org1Admin");
         Main.org1_peer_admin.setMspId(Main.MSPID);
 
@@ -51,6 +63,7 @@ public class OpenChannel {
         ordererProperties.setProperty("hostnameOverride", "orderer.example.com");
         ordererProperties.setProperty("sslProvider", "openSSL");
         ordererProperties.setProperty("negotiationType", "TLS");
+        PropertiesManager.SetProperties(ordererProperties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Orderer.properties");
         ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
         ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
         Main.orderer = Main.client.newOrderer("orderer.example.com", "grpc://" + Main.IP + ":7050", ordererProperties);
@@ -62,6 +75,7 @@ public class OpenChannel {
         peerProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
         peerProperties.setProperty("sslProvider", "openSSL");
         peerProperties.setProperty("negotiationType", "TLS");
+        PropertiesManager.SetProperties(peerProperties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Peer.properties");
         peerProperties.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
         Main.peer = Main.client.newPeer("peer0.org1.example.com", "grpc://" + Main.IP + ":7051", peerProperties);
 
@@ -71,6 +85,7 @@ public class OpenChannel {
         ehProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
         ehProperties.setProperty("sslProvider", "openSSL");
         ehProperties.setProperty("negotiationType", "TLS");
+        PropertiesManager.SetProperties(ehProperties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\EventHub.properties");
         ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
         ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
         eventHub = Main.client.newEventHub("peer0.org1.example.com", "grpc://" + Main.IP + ":7053", ehProperties);
@@ -93,16 +108,16 @@ public class OpenChannel {
 
     }
 
-    static PrivateKey getPrivateKeyFromBytes(byte[] data) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
+    static PrivateKey getPrivateKeyFromBytes(byte[] data) throws Exception {
         final Reader pemReader = new StringReader(new String(data));
 
-        final PrivateKeyInfo pemPair;
+        PrivateKeyInfo pemPair;
         try (PEMParser pemParser = new PEMParser(pemReader)) {
             pemPair = (PrivateKeyInfo) pemParser.readObject();
         }
 
         PrivateKey privateKey = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME).getPrivateKey(pemPair);
-
+RestoreManager.SetSerialize( privateKey);
         return privateKey;
     }
 
