@@ -50,11 +50,20 @@ public class Main {
             properties = new Properties();
             properties.setProperty("allowAllHostNames", "true");
             properties.setProperty("pemFile", cf.getAbsolutePath());
+            PropertiesManager.SetProperties(properties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Hostnames.properties");
 
-            RegisterUser.register("asadssdass");
+
+            System.out.println("1-начать сначала, 2-использовать готовый канал");
+            Scanner in= new Scanner(System.in);
+            int mode = in.nextInt();
+            if(mode==1){
+                PropertiesManager.SetProperties(properties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Hostnames.properties");
+                RegisterUser.register("asadssdass6");
             channel = OpenChannel.openChannel("mychannel");
-            SetChainCode.setChainCode();
-            Commands.sendTransInit();
+           SetChainCode.setChainCode();
+            Commands.sendTransInit();}
+            else{channel = RestoreManager.Restore();
+            SetChainCode.setChainCode();}
         } catch (RegistrationException e){
             e.printStackTrace();
             System.out.println("Перезапусти докер");
@@ -98,7 +107,7 @@ public class Main {
 
         }
 
-        channel.shutdown(true);
+       // channel.shutdown(true);
 
 
     }
