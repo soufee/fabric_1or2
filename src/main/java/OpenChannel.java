@@ -47,7 +47,7 @@ Properties prop = new Properties();
 //
 //        }
 //        prop.setProperty("bytes",sb.toString());
-       PropertiesManager.SetProperties(prop,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\data.properties");
+       PropertiesManager.SetProperties(prop,"src\\main\\java\\properties\\data.properties");
         Main.org1_peer_admin = new FCUser("Org1Admin");
         Main.org1_peer_admin.setMspId(Main.MSPID);
 
@@ -63,7 +63,7 @@ Properties prop = new Properties();
         ordererProperties.setProperty("hostnameOverride", "orderer.example.com");
         ordererProperties.setProperty("sslProvider", "openSSL");
         ordererProperties.setProperty("negotiationType", "TLS");
-        PropertiesManager.SetProperties(ordererProperties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Orderer.properties");
+        PropertiesManager.SetProperties(ordererProperties,"src\\main\\java\\properties\\Orderer.properties");
         ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
         ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
         Main.orderer = Main.client.newOrderer("orderer.example.com", "grpc://" + Main.IP + ":7050", ordererProperties);
@@ -75,7 +75,7 @@ Properties prop = new Properties();
         peerProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
         peerProperties.setProperty("sslProvider", "openSSL");
         peerProperties.setProperty("negotiationType", "TLS");
-        PropertiesManager.SetProperties(peerProperties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Peer.properties");
+        PropertiesManager.SetProperties(peerProperties,"src\\main\\java\\properties\\Peer.properties");
         peerProperties.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
         Main.peer = Main.client.newPeer("peer0.org1.example.com", "grpc://" + Main.IP + ":7051", peerProperties);
 
@@ -85,7 +85,7 @@ Properties prop = new Properties();
         ehProperties.setProperty("hostnameOverride", "peer0.org1.example.com");
         ehProperties.setProperty("sslProvider", "openSSL");
         ehProperties.setProperty("negotiationType", "TLS");
-        PropertiesManager.SetProperties(ehProperties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\EventHub.properties");
+        PropertiesManager.SetProperties(ehProperties,"src\\main\\java\\properties\\EventHub.properties");
         ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
         ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
         eventHub = Main.client.newEventHub("peer0.org1.example.com", "grpc://" + Main.IP + ":7053", ehProperties);

@@ -3,7 +3,9 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionEventException;
 import src.HashFileManager;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -128,8 +130,7 @@ public class Commands {
         try {
             Main.client.setUserContext(peerAdmin);
             transactionEvent = invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "add", new String[]{fileName, HashFileManager.getFilehash(fileName)});
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             except(e);
         }
         System.out.println("Выходим из ADD");
@@ -200,5 +201,23 @@ public class Commands {
         return "Что-то пошло не так";
 
     }
+
+    public static void checkFile(String fileName) {
+        System.out.println("Зашли в CHECK");
+        try {
+            String hashinchain = getOldHash(fileName);
+            String hashOfFile = HashFileManager.getFilehash(fileName);
+            System.out.println("Хэш файла в хранилище "+hashOfFile);
+            String message = hashinchain.equals(hashOfFile) ? "Файл не менялся" : "Файл изменился";
+            System.out.println(message);
+        } catch (Exception e) {
+            except(e);
+        }
+
+        System.out.println("Выходим из CHECK");
+
+
+    }
+
 
 }

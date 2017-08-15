@@ -28,7 +28,7 @@ public class RestoreManager {
         String certificate = new String(IOUtils.toByteArray(new FileInputStream(Main.certificateFile.getAbsolutePath())), "UTF-8");
     //    Properties prop1 = PropertiesManager.getProperties("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Hostnames.properties");
 
-        Properties prop2 = PropertiesManager.getProperties("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\data.properties");
+        Properties prop2 = PropertiesManager.getProperties("src\\main\\java\\properties\\data.properties");
       //  byte[] bytes = ByteManager.Convert("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\env\\channel\\crypto-config\\peerOrganizations\\org1.example.com\\ca\\ca.org1.example.com-cert.pem");
 
        // PrivateKey key = OpenChannel.getPrivateKeyFromBytes(ByteManager.Reverse(prop2.getProperty("bytes")));
@@ -47,17 +47,17 @@ public class RestoreManager {
 
         Channel newChannel =      Main.client.newChannel("mychannel");
 
-        Properties ordererProp = PropertiesManager.getProperties("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Orderer.properties");
+        Properties ordererProp = PropertiesManager.getProperties("src\\main\\java\\properties\\Orderer.properties");
         ordererProp.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
         ordererProp.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
         Main.orderer = Main.client.newOrderer("orderer.example.com", "grpc://" + Main.IP + ":7050", ordererProp);
 newChannel.addOrderer(Main.orderer);
 
-        Properties peerProp = PropertiesManager.getProperties("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Peer.properties");
+        Properties peerProp = PropertiesManager.getProperties("src\\main\\java\\properties\\Peer.properties");
         peerProp.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
         Main.peer = Main.client.newPeer("peer0.org1.example.com", "grpc://" + Main.IP + ":7051", peerProp);
 newChannel.addPeer(Main.peer);
-        Properties ehProperties=PropertiesManager.getProperties("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\EventHub.properties");
+        Properties ehProperties=PropertiesManager.getProperties("src\\main\\java\\properties\\EventHub.properties");
         ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
         ehProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
         OpenChannel.eventHub = Main.client.newEventHub("peer0.org1.example.com", "grpc://" + Main.IP + ":7053", ehProperties);
@@ -75,14 +75,14 @@ newChannel.addEventHub(Main.client.newEventHub("peer0.org1.example.com", "grpc:/
 
 
     public static void SetSerialize(PrivateKey newPK) throws IOException {
-        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\PK.dat"));
+        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("src\\main\\java\\properties\\PK.dat"));
         out.writeObject(newPK);
         out.close();
     }
 
 
     public static PrivateKey GetSerialize() throws IOException, ClassNotFoundException {
-        ObjectInputStream in =  new ObjectInputStream (new FileInputStream("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\PK.dat"));
+        ObjectInputStream in =  new ObjectInputStream (new FileInputStream("src\\main\\java\\properties\\PK.dat"));
       return  (PrivateKey) in.readObject();
 
     }

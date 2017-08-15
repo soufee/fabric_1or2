@@ -50,14 +50,14 @@ public class Main {
             properties = new Properties();
             properties.setProperty("allowAllHostNames", "true");
             properties.setProperty("pemFile", cf.getAbsolutePath());
-            PropertiesManager.SetProperties(properties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Hostnames.properties");
+            PropertiesManager.SetProperties(properties,"src\\main\\java\\properties\\Hostnames.properties");
 
 
-            System.out.println("1-начать сначала, 2-использовать готовый канал");
+            System.out.println("1-начать сначала (требуется перезапуск докера), 2-использовать готовый канал");
             Scanner in= new Scanner(System.in);
             int mode = in.nextInt();
             if(mode==1){
-                PropertiesManager.SetProperties(properties,"C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\java\\properties\\Hostnames.properties");
+                PropertiesManager.SetProperties(properties,"src\\main\\java\\properties\\Hostnames.properties");
                 RegisterUser.register("asadssdass7");
             channel = OpenChannel.openChannel("mychannel");
            SetChainCode.setChainCode();
@@ -98,6 +98,9 @@ public class Main {
                 case "get":
                     System.out.println("Введите имя файла");
                     Commands.getOldHash(scanner.nextLine());
+                case "check":
+                    System.out.println("Введите имя файла");
+                    Commands.checkFile(scanner.nextLine());
                 default:
                     if (!(line.equals("exit")))
                         System.out.println("Введите команду");

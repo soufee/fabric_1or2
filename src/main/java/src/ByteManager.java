@@ -25,7 +25,7 @@ public class ByteManager {
 
     public static void main(String[] args) {
         try {
-            Convert("C:\\Users\\agliullin\\Desktop\\idea projects\\fabric7\\src\\main\\env\\channel\\crypto-config\\peerOrganizations\\org1.example.com\\ca\\ca.org1.example.com-cert.pem");
+            Convert("main\\env\\channel\\crypto-config\\peerOrganizations\\org1.example.com\\ca\\ca.org1.example.com-cert.pem");
         } catch (IOException e) {
 
         }
