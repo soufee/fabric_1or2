@@ -10,9 +10,13 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
+
+
 // DocHash Chaincode implementation
 type DocChaincode struct {
 }
+
+
 
 var logger = shim.NewLogger("DocChaincode")
 
@@ -51,31 +55,39 @@ func (t *DocChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Error("Invalid invoke function name. Expecting \"add\" \"update\" \"query\".")
 }
 
-// add puts document into KVS, parameters: name, current_hash
+// Add puts document into KVS. In this new file secreteWord attached
+// for protect file from edition of other user.
+//
+// parameters: name, current_hash, secretWord.
 func (t *DocChaincode) add(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	logger.Info("Add started.")
 
-	if len(args) != 2 {
+	if len(args) != 3 {
 		return shim.Error("Incorrect number of arguments. Expecting name of document and its hash.")
 	}
 
-	var Name, Hash string
+	var Name, Hash, SecretWord string
 
 	Name = args[0]
 	Hash = args[1]
+	SecretWord = args[2]
 
-	hash, err := stub.GetState(Name)
+	byteStream, err := stub.GetState(Name)
+
 
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	if hash != nil {
-		return shim.Error("File \"" + Name + "\" already exists with hash=" + string(hash))
+	if byteStream != nil {
+		var fileContent = getFileContentFromStreamBytes(byteStream)
+		return shim.Error("File \"" + Name + "\" already exists with hash=" + string(fileContent.Hash))
 	}
 
-	err = stub.PutState(Name, []byte(Hash))
+	var newFileCont = FileContent{Hash: []byte(Hash), SecretWord: SecretWord}
+	var newFileContStream = getByteStreamFromFileContent(newFileCont)
+	err = stub.PutState(Name, newFileContStream)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -86,36 +98,50 @@ func (t *DocChaincode) add(stub shim.ChaincodeStubInterface, args []string) pb.R
 	return shim.Success(nil)
 }
 
-// update puts new document hash into KVS, parameters: name, current_hash
+// update puts new document structure into KVS.
+// Structure contain from hash value and secretWord that secure this file
+// from update of other user that don't add this file.
+//
+// SecreteWord need for authentification purposes.
+//
+// parameters: name, current_hash,
 func (t *DocChaincode) update(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	logger.Info("Update started.")
 
-	if len(args) != 3 {
+	if len(args) != 4 {
 		return shim.Error("Incorrect number of arguments. Expecting name of document and its previous hash and new hash.")
 	}
 
-	var Name, OldHash, NewHash string
+	var Name, OldHash, NewHash, SecreteWord string
 
 	Name = args[0]
 	OldHash = args[1]
 	NewHash = args[2]
+	SecreteWord = args[3]
 
-	CurrentHash, err := stub.GetState(Name)
+	byteStream, err := stub.GetState(Name)
 
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	if CurrentHash == nil {
+	if byteStream == nil {
 		return shim.Error("File \"" + Name + "\" doesnt exist in storage.")
 	}
 
-	if string(CurrentHash) != OldHash {
-		return shim.Error("File \"" + Name + "\" has another hash=" + string(CurrentHash))
+	var fileCont = getFileContentFromStreamBytes(byteStream)
+	if string(fileCont.Hash) != OldHash {
+		return shim.Error("File \"" + Name + "\" has another hash=" + string(fileCont.Hash))
 	}
 
-	err = stub.PutState(Name, []byte(NewHash))
+	if fileCont.SecretWord != SecreteWord {
+		return shim.Error("Acces denied for file \"" + Name + "\". There is no rights to edit this file. Wrong SecreteCode for this file.")
+	}
+
+	var newFileContent = FileContent{Hash: []byte(NewHash), SecretWord: SecreteWord}
+	var newByteStream = getByteStreamFromFileContent(newFileContent)
+	err = stub.PutState(Name, newByteStream)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -125,7 +151,10 @@ func (t *DocChaincode) update(stub shim.ChaincodeStubInterface, args []string) p
 	return shim.Success(nil)
 }
 
-// get returns document hash from KVS, parameters: name
+// Get returns document hash from KVS.
+// All users can get hash of file.
+//
+// parameters: name.
 func (t *DocChaincode) get(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	logger.Info("Get started.")
@@ -137,22 +166,26 @@ func (t *DocChaincode) get(stub shim.ChaincodeStubInterface, args []string) pb.R
 	var Name string
 	Name = args[0]
 
-	CurrentHash, err := stub.GetState(Name)
+	byteStream, err := stub.GetState(Name)
 
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	if CurrentHash == nil {
+	if byteStream == nil {
 		return shim.Error("File \"" + Name + "\" doesnt exist in storage.")
 	}
 
-	logger.Info("Get finished:", string(CurrentHash))
+	var fileContent = getFileContentFromStreamBytes(byteStream)
+	logger.Info("Get finished:", string(fileContent.Hash))
 
-	return shim.Success(CurrentHash)
+	return shim.Success(fileContent.Hash)
 }
 
-// query gets history of document changes from KVS, parameters: name
+// Query gets history of document changes from KVS.
+// All users can get query from all files without restriction.
+//
+// parameters: name.
 func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	logger.Info("Query started.")
@@ -199,7 +232,8 @@ func (t *DocChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb
 		if response.IsDelete {
 			buffer.WriteString("null")
 		} else {
-			buffer.WriteString(string(response.Value))
+			var fileContent = getFileContentFromStreamBytes(response.Value)
+			buffer.WriteString(string(fileContent.Hash))
 		}
 		buffer.WriteString("\"")
 

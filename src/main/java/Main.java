@@ -1,3 +1,4 @@
+import authentification.ClientUserAuth;
 import org.apache.tomcat.jni.Error;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
@@ -75,21 +76,24 @@ public class Main {
             System.exit(0);
         }
 
+        String secreteWord = getSecreteWordFromUser();
+
         System.out.println("Введите команду...");
         Scanner scanner = new Scanner(System.in);
         String line = "";
 
         while (!(line.equals("exit"))) {
             line = scanner.nextLine();
-            switch (line) {
 
+
+            switch (line) {
                 case "add":
                     System.out.println("Введите имя файла");
-                    Commands.sendTransAdd(scanner.nextLine());
+                    Commands.sendTransAdd(scanner.nextLine(), secreteWord);
                     break;
                 case "update":
                     System.out.println("Введите имя файла");
-                    Commands.sendTransUpdate(scanner.nextLine());
+                    Commands.sendTransUpdate(scanner.nextLine(), secreteWord);
                     break;
                 case "query":
                     System.out.println("Введите имя файла");
@@ -112,7 +116,32 @@ public class Main {
         }
 
         channel.shutdown(true);
-
-
     }
+
+
+    /**
+     * Function get login and password from user using console.
+     * Than it convert it to secrete word using hash algorithm and
+     * return this secrete word.
+     * @return - secrete word that aquired from hashing login and password.
+     */
+    private static String getSecreteWordFromUser()
+    {
+        System.out.println("Введите логин:");
+        Scanner scanner = new Scanner(System.in);
+        String login = scanner.nextLine();
+
+        System.out.println("Введите пароль:");
+        String password = scanner.nextLine();
+
+        String salt = new String("blockchain2017");
+
+        ClientUserAuth clientUserAuth = new ClientUserAuth(login.toCharArray(), password.toCharArray(), salt);
+        String secreteWord = clientUserAuth.getHashLogPassword();
+        return secreteWord;
+    }
+
+
+
+
 }

@@ -80,6 +80,7 @@ public class Commands {
             return;
         }
         System.out.println(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()));
+        e.printStackTrace();
     }
 
     private static BlockEvent.TransactionEvent invokeChaincode(HFClient client, Channel channel, ChaincodeID chaincodeID, String method, String[] args) throws Exception {
@@ -125,24 +126,26 @@ public class Commands {
         return channel.sendTransaction(successful).get(10, TimeUnit.SECONDS);
     }
 
-    public static void sendTransAdd(String fileName) {
+    public static void sendTransAdd(String fileName, String secreteWord) {
         System.out.println("Зашли в ADD");
         try {
             Main.client.setUserContext(peerAdmin);
-            transactionEvent = invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "add", new String[]{fileName, HashFileManager.getFilehash(fileName)});
+            transactionEvent = invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "add",
+                                                new String[]{fileName, HashFileManager.getFilehash(fileName), secreteWord});
         } catch (Exception e) {
             except(e);
         }
         System.out.println("Выходим из ADD");
     }
 
-    public static void sendTransUpdate(String fileName) {
+    public static void sendTransUpdate(String fileName, String secreteWord) {
         System.out.println("Зашли в UPDATE");
         try {
             Main.client.setUserContext(peerAdmin);
             String oldHash = getOldHash(fileName);
             String newHash = HashFileManager.getFilehash(fileName);
-            transactionEvent = invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "update", new String[]{fileName, oldHash, newHash});
+            transactionEvent = invokeChaincode(Main.client, Main.channel, Main.chaincodeID, "update",
+                                                                new String[]{fileName, oldHash, newHash, secreteWord});
             getOldHash(fileName);
         } catch (Exception e) {
             except(e);
